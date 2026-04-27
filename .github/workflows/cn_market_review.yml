@@ -1,0 +1,50 @@
+name: A股大盘复盘（每天晚8点）
+
+on:
+  schedule:
+    - cron: '0 12 * * 1-5'   # UTC 12:00 = 北京时间 20:00，周一到周五
+  workflow_dispatch:          # 支持手动触发
+
+concurrency:
+  group: cn-market-review
+  cancel-in-progress: false
+
+jobs:
+  cn_review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v5
+
+      - name: 设置 Python 环境
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: 安装依赖
+        run: pip install -r requirements.txt
+
+      - name: 创建必要目录
+        run: mkdir -p data logs reports
+
+      - name: 执行 A股大盘复盘
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          PUSHPLUS_TOKEN: ${{ secrets.PUSHPLUS_TOKEN }}
+          STOCK_LIST: ${{ vars.STOCK_LIST || secrets.STOCK_LIST || '600519' }}
+          MARKET_REVIEW_REGION: cn
+          MARKET_REVIEW_ENABLED: 'true'
+          TRADING_DAY_CHECK_ENABLED: 'true'
+          LOG_LEVEL: INFO
+        run: python main.py --market-review
+
+      - name: 上传报告
+        uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: cn-review-${{ github.run_number }}
+          path: reports/
+          retention-days: 7
