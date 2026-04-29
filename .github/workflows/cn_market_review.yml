@@ -1,8 +1,8 @@
 name: A股大盘复盘（每天晚8点）
 
 on:
-  schedule:
-    - cron: '0 12 * * 1-5'   # UTC 12:00 = 北京时间 20:00，周一到周五
+  schedule: 
+    - cron: '0 0 * * 2-6'
   workflow_dispatch:          # 支持手动触发
 
 concurrency:
